@@ -15,7 +15,7 @@ def render_login():
             if st.session_state.login_step == "identificazione":
                 with st.container(border=True):
                     if os.path.exists("Italia-digitale.jpg"):
-                        st.image("italia-digitale.jpg", use_container_width=True)
+                        st.image("Italia-digitale.jpg", use_container_width=True)
                     st.markdown("### Accesso Utente")
                     st.caption("Inserisci le credenziali per accedere o registrarti.")
                     nome = st.text_input("Nome", placeholder="Es. Mario")
