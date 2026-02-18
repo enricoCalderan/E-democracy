@@ -1,0 +1,33 @@
+Nome,Cognome,Area,Eta,Indirizzo,Citta,Descrizione,Password
+Mario,Rossi,Diritto,45,Via Roma 10,Milano,"Avvocato penalista con esperienza ventennale.",1234
+Claudio,Franchi,Diritto,67,Via Udine 10,Milano,"Ex magistrato e consulente legale.",1234
+Alessandro,Conti,Diritto,55,Piazza San Marco 3,Venezia,"Professore ordinario di Diritto Costituzionale.",1234
+Laura,Costa,Diritto,38,Corso Vittorio 10,Torino,"Avvocato civilista esperta in diritto di famiglia.",1234
+Martina,De Luca,Diritto,33,Viale Europa 12,Roma,"Giurista d'impresa per multinazionali.",1234
+Antonio,Barbieri,Diritto,42,Via Napoli 5,Napoli,"Notaio e studioso di diritto privato.",1234
+Giorgio,Santoro,Diritto,50,Via dei Mille 1,Palermo,"Avvocato amministrativista.",1234
+Michele,Pellegrini,Diritto,29,Via Saffi 2,Bologna,"Dottorando in Giurisprudenza.",1234
+Pietro,Orlando,Diritto,61,Corso Umberto 8,Bari,"Giudice di pace.",1234
+Luigi,Verdi,Tecnologia,32,Corso Italia 5,Torino,"Ingegnere informatico esperto in AI.",1234
+Marco,Romano,Tecnologia,28,Viale Monza 15,Milano,"Esperto di Cybersecurity.",1234
+Paolo,Ricci,Tecnologia,40,Via Roma 22,Bologna,"Sviluppatore Senior Cloud Architect.",1234
+Silvia,Ferrari,Tecnologia,27,Via Dante 3,Genova,"Data Scientist e analista Big Data.",1234
+Chiara,Lombardi,Tecnologia,35,Via Po 4,Torino,"Ingegnere delle telecomunicazioni.",1234
+Valentina,Rinaldi,Tecnologia,30,Piazza Navona 6,Roma,"Sviluppatrice Blockchain.",1234
+Simona,Villa,Tecnologia,45,Via Manzoni 9,Milano,"CTO di una startup fintech.",1234
+Elisabetta,Marchetti,Tecnologia,26,Via Verdi 11,Firenze,"Ricercatrice in Robotica.",1234
+Anna,Bianchi,Ambiente,29,Piazza Garibaldi 2,Napoli,"Biologa marina.",1234
+Sofia,Gallo,Ambiente,35,Corso Umberto 4,Palermo,"Ingegnere ambientale.",1234
+Francesca,Moretti,Ambiente,31,Via dei Pini 4,Firenze,"Ecologa e attivista.",1234
+Davide,Bruno,Ambiente,45,Via Napoli 8,Bari,"Geologo.",1234
+Federico,Marino,Ambiente,39,Via Roma 1,Cagliari,"Esperto in energie rinnovabili.",1234
+Stefano,Caruso,Ambiente,52,Corso Cavour 3,Verona,"Agronomo forestale.",1234
+Nicola,Palmieri,Ambiente,28,Via Etnea 10,Catania,"Studente magistrale in Scienze Ambientali.",1234
+Lorenzo,Gatti,Ambiente,41,Via Mazzini 5,Parma,"Consulente per la gestione rifiuti.",1234
+Giulia,Neri,Economia,50,Via Mazzini 8,Bologna,"Commercialista.",1234
+Elena,Esposito,Economia,42,Via dei Mille 1,Roma,"Economista presso ente pubblico.",1234
+Giovanni,Greco,Economia,55,Piazza Duomo 5,Milano,"Professore di Macroeconomia.",1234
+Roberto,Rizzo,Economia,60,Via Veneto 1,Napoli,"Ex dirigente bancario.",1234
+Beatrice,Serra,Economia,34,Via Lagrange 2,Torino,"Analista finanziaria.",1234
+Daniela,Ferri,Economia,48,Via Rizzoli 7,Bologna,"Consulente del lavoro.",1234
+Alessandra,Rizzi,Economia,37,Corso Buenos Aires 12,Milano,"Esperta di finanza agevolata.",1234

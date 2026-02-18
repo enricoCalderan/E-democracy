@@ -1,0 +1,75 @@
+import streamlit as st
+import pandas as pd
+import plotly.express as px
+import database as db
+
+def render_dashboard():
+    # Recupera la legge assegnata (salvata nel campo 'area' durante il login)
+    legge_assegnata = st.session_state.user_info['area']
+    
+    st.markdown("## Centro di Comando Legislativo")
+    st.markdown(f"### Norma assegnata: {legge_assegnata}")
+    st.divider()
+
+    df_pareri = db.get_tutti_pareri()
+    
+    # Filtra i dati per la legge specifica
+    df_legge = pd.DataFrame()
+    if not df_pareri.empty and 'Legge' in df_pareri.columns:
+        df_legge = df_pareri[df_pareri['Legge'] == legge_assegnata]
+        # Normalizzazione colonne
+        if 'Posizione' not in df_legge.columns: df_legge['Posizione'] = "Non specificato"
+
+    if not df_legge.empty:
+        # --- CALCOLO KPI ---
+        totale = len(df_legge)
+        favorevoli = len(df_legge[df_legge['Posizione'].str.contains("Favorevole", case=False, na=False)])
+        contrari = len(df_legge[df_legge['Posizione'].str.contains("Contrario", case=False, na=False)])
+        modifiche = len(df_legge[df_legge['Posizione'].str.contains("Modifica", case=False, na=False)])
+
+        # --- VISUALIZZAZIONE METRICHE ---
+        with st.container(border=True):
+            col1, col2, col3, col4 = st.columns(4)
+            col1.metric("Totale Pareri", totale)
+            col2.metric("Favorevoli", favorevoli)
+            col3.metric("Contrari", contrari)
+            col4.metric("Richieste Modifica", modifiche)
+
+        st.write("")
+        
+        # --- GRAFICO ANALISI CONSENSO ---
+        st.markdown("### Analisi del Consenso")
+        
+        # Creazione DataFrame per il grafico
+        dati_grafico = df_legge['Posizione'].value_counts().reset_index()
+        dati_grafico.columns = ['Posizione', 'Conteggio']
+        
+        # Mappa colori personalizzata
+        color_map = {
+            "✅ Favorevole": "#28a745",           # Verde
+            "❌ Contrario": "#dc3545",            # Rosso
+            "✏️ Proposta di Modifica": "#17a2b8"  # Azzurro
+        }
+        
+        fig = px.pie(dati_grafico, values='Conteggio', names='Posizione', hole=0.4, 
+                     color='Posizione', color_discrete_map=color_map)
+        st.plotly_chart(fig, use_container_width=True)
+
+        st.markdown("### Dettaglio Contributi")
+        
+        for idx, row in df_legge.iterrows():
+            # Anonimizzazione: non mostriamo l'autore
+            anteprima = row['Parere'][:100] + "..." if len(row['Parere']) > 100 else row['Parere']
+            with st.expander(f"{row['Posizione']} | {anteprima}"):
+                st.write(f"**Parere completo:** {row['Parere']}")
+                
+                commenti = db.get_commenti_parere(row['Autore'], legge_assegnata)
+                if not commenti.empty:
+                    st.markdown("---")
+                    st.markdown("**Commenti:**")
+                    for _, comm in commenti.iterrows():
+                        st.info(f"**Utente:** {comm['Testo']}")
+                else:
+                    st.caption("Nessun commento presente.")
+    else:
+        st.info(f"Non sono ancora presenti pareri o dati per la norma: **{legge_assegnata}**.")
