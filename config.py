@@ -1,8 +1,15 @@
 import google.generativeai as genai
+import streamlit as st
+import os
 
 # --- CONFIGURAZIONE GEMINI ---
-# Sostituisci 'IL_TUO_API_KEY' con la chiave reale
-genai.configure(api_key="AIzaSyCIQZioZS3oCzgSauz7bhwNi3Wr16hahIM")
+try:
+    api_key = st.secrets["GOOGLE_API_KEY"]
+except Exception:
+    api_key = os.getenv("GOOGLE_API_KEY")
+
+if api_key:
+    genai.configure(api_key=api_key)
 
 # --- DATI SIMULATI PROPOSTE DI LEGGE ---
 PROPOSTE_LEGGE = [
