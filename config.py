@@ -21,7 +21,7 @@ try:
     # --- 3. TEST FUNZIONALE (La prova del nove) ---
     st.subheader("Verifica API in corso...")
     
-    model = genai.GenerativeModel('gemini-1.5-flash')
+    model = genai.GenerativeModel('gemini-2.5-flash')
     
     # Facciamo una domanda semplicissima
     response = model.generate_content("Rispondi solo con la parola 'Funziona!'")
