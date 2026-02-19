@@ -107,7 +107,7 @@ def render_partecipa():
             mostra_form = False
 
             if gia_votato:
-                st.success("✅ **HAI GIÀ PARTECIPATO A QUESTA CONSULTAZIONE**")
+                st.success("**HAI GIÀ PARTECIPATO A QUESTA CONSULTAZIONE**")
                 with st.expander("Visualizza il tuo parere attuale", expanded=False):
                     st.write(f"**La tua posizione:** {dati_precedenti['Posizione']}")
                     st.write(f"**Il tuo commento:** {dati_precedenti['Parere']}")
@@ -126,7 +126,7 @@ def render_partecipa():
                         st.session_state[edit_key] = True
                         st.rerun()
             else:
-                st.info("⚪ **NON HAI ANCORA ESPRESSO UN PARERE**")
+                st.info("**NON HAI ANCORA ESPRESSO UN PARERE**")
                 st.subheader("📝 Inserisci il tuo intervento")
                 mostra_form = True
                 label_btn = "Invia al Parlamento"
