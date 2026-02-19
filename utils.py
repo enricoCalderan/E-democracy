@@ -54,16 +54,16 @@ def genera_sintesi_legislativa(lista_pareri, titolo_legge):
     
     Genera un report strutturato in Markdown con queste sezioni esatte:
     
-    ### 📊 Executive Summary
+    ### Executive Summary
     Un'analisi generale del sentiment basata sul peso dei voti.
     
-    ### ✅ Consenso ad alto impatto
+    ### Consenso ad alto impatto
     Sintesi dei pareri 'Favorevole' che hanno ricevuto più approvazione, evidenziando i punti di forza tecnici.
     
-    ### ⚠️ Dissenso Qualificato
+    ### Dissenso Qualificato
     Analisi delle critiche (pareri 'Contrario') più votate, spiegando quali sono i rischi principali rilevati dagli esperti.
     
-    ### 💡 Proposte di Emendamento
+    ### Proposte di Emendamento
     Una lista di suggerimenti pratici estratti dai pareri (specie quelli di 'Modifica') con il ranking più alto.
     
     DATI INPUT (Ordinati per rilevanza):
