@@ -18,6 +18,7 @@ def render_login():
                         st.image("Italia-digitale.jpg", use_container_width=True)
                     st.markdown("### Accesso Utente")
                     st.caption("Inserisci le credenziali per accedere o registrarti.")
+                    st.info("Esempi: **Luigi Verdi** (pass: 1234) | **Matteo Salvini** (pass: admin)")
                     nome = st.text_input("Nome", placeholder="Es. Mario")
                     cognome = st.text_input("Cognome", placeholder="Es. Rossi")
                     
