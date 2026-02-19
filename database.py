@@ -127,3 +127,12 @@ def salva_commento(autore_commento, autore_parere, legge, testo):
                          columns=["AutoreCommento", "AutoreParere", "Legge", "Testo"])
     df = pd.concat([df, nuovo], ignore_index=True)
     df.to_csv(file_path, index=False)
+
+def get_proposte_legge():
+    if os.path.exists("database_proposte.csv"):
+        try:
+            df = pd.read_csv("database_proposte.csv")
+            return df.to_dict('records')
+        except Exception:
+            return []
+    return []
