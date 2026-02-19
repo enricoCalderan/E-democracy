@@ -46,27 +46,31 @@ def genera_sintesi_legislativa(lista_pareri, titolo_legge):
         testo_dati += f"- [Punteggio: {p['Punteggio']}] Posizione: {p['Posizione']} | Contenuto: {p['Testo']}\n"
 
     prompt = f"""
-    Agisci come un esperto AI Engineer e Analista Legislativo.
-    Analizza i seguenti pareri cittadini sulla legge: "{titolo_legge}".
-    
-    I pareri sono forniti con un 'Punteggio' (voti up/down). 
-    ISTRUZIONE CHIAVE: I pareri con punteggio più alto rappresentano il consenso della comunità e devono influenzare maggiormente la sintesi.
-    
-    Genera un report strutturato in Markdown con queste sezioni esatte:
-    
+    Agisci come un esperto AI Engineer e Analista Legislativo di alto livello.
+    Il tuo compito è redigere un report tecnico sull'orientamento dei cittadini riguardo alla legge: "{titolo_legge}".
+
+    ### REGOLE RIGOROSE DI ANALISI:
+    1. **Filtro Qualitativo:** Analizza ESCLUSIVAMENTE i pareri e i commenti che hanno ricevuto un punteggio positivo (upvotes > downvotes). Ignora i contributi con punteggio nullo o negativo, in quanto privi di consenso da parte della comunità.
+    2. **Ponderazione del Consenso:** I pareri con punteggio più alto devono avere un peso proporzionalmente maggiore nella stesura dell'analisi. Devono essere trattati come le istanze prioritarie della cittadinanza.
+    3. **Sintesi dei Commenti:** Analizza i fili di discussione (commenti ai pareri). Identifica gli argomenti e le preoccupazioni che ricorrono più spesso nei commenti con votazione positiva e integrali nel report.
+    4. **Privacy dei Dati:** NON mostrare mai i punteggi numerici, i voti o i nomi degli utenti nel report finale.
+    5. **Terminologia:** Non utilizzare mai la parola "sentiment". Utilizza "Orientamento prevalente", "Clima d'opinione" o "Posizionamento della comunità".
+
+    Genera un report in Markdown strutturato come segue:
+
     ### Executive Summary
-    Un'analisi generale del sentiment basata sul peso dei voti.
-    
-    ### Consenso ad alto impatto
-    Sintesi dei pareri 'Favorevole' che hanno ricevuto più approvazione, evidenziando i punti di forza tecnici.
-    
-    ### Dissenso Qualificato
-    Analisi delle critiche (pareri 'Contrario') più votate, spiegando quali sono i rischi principali rilevati dagli esperti.
-    
-    ### Proposte di Emendamento
-    Una lista di suggerimenti pratici estratti dai pareri (specie quelli di 'Modifica') con il ranking più alto.
-    
-    DATI INPUT (Ordinati per rilevanza):
+    Descrivi l'orientamento prevalente della comunità verso la proposta di legge, sintetizzando il clima d'opinione generale basato sul peso dei consensi ricevuti.
+
+    ### Analisi del Consenso Prioritario
+    Sintesi tecnica dei pareri 'Favorevoli' che godono del maggior supporto. Evidenzia i benefici attesi e le motivazioni di natura economica o sociale che la comunità ritiene fondamentali.
+
+    ### Criticità Costruttive e Dissenso Qualificato
+    Analizza i pareri 'Contrari' che hanno comunque ottenuto votazioni positive (critiche ritenute valide dalla comunità). Spiega quali sono i rischi tecnici o i timori procedurali evidenziati, integrando anche i temi ricorrenti emersi dai commenti più apprezzati.
+
+    ### Proposte di Emendamento e Modifica
+    Presenta una lista di suggerimenti pratici estratti dai pareri di 'Modifica' con il ranking più alto. Focalizzati sulle soluzioni proposte per migliorare il testo legislativo.
+
+    DATI DI INPUT DA ANALIZZARE:
     {testo_dati}
     """
     
