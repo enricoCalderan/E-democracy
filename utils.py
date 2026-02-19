@@ -15,7 +15,7 @@ def analizza_cv_con_gemini(testo_cv):
     Analizza questo CV.
     1. Identifica l'area di competenza principale tra: Tecnologia, Diritto, Ambiente, Economia.
        Se il candidato non ha competenze specifiche in queste aree o è uno studente senza specializzazione, scrivi 'Nessuna'.
-    2. Scrivi una breve descrizione professionale del candidato in terza persona (max 25 parole).
+    2. Scrivi una breve descrizione professionale del candidato in terza persona (max 15 parole).
     
     Restituisci il risultato in questo formato esatto:
     Area: [Area scelta]
