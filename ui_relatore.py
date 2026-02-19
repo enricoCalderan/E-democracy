@@ -95,8 +95,7 @@ def render_dashboard():
         
         for idx, row in df_legge.iterrows():
             # Anonimizzazione: non mostriamo l'autore
-            anteprima = row['Parere'][:100] + "..." if len(row['Parere']) > 100 else row['Parere']
-            with st.expander(f"[{row['Punteggio']} Voti] {row['Posizione']} | {anteprima}"):
+            with st.expander(f"[Valutazione: {row['Punteggio']}] {row['Posizione']}"):
                 st.write(f"**Parere completo:** {row['Parere']}")
                 
                 commenti = db.get_commenti_parere(row['Autore'], legge_assegnata)
