@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 import database as db
+import utils
 
 def render_dashboard():
     # Recupera la legge assegnata (salvata nel campo 'area' durante il login)
@@ -54,6 +55,36 @@ def render_dashboard():
         fig = px.pie(dati_grafico, values='Conteggio', names='Posizione', hole=0.4, 
                      color='Posizione', color_discrete_map=color_map)
         st.plotly_chart(fig, use_container_width=True)
+
+        # --- SINTESI LEGISLATIVA PESATA (AI) ---
+        st.write("")
+        st.markdown("### 🧠 Sintesi Legislativa Pesata (AI)")
+        
+        with st.container(border=True):
+            st.markdown("**Analisi automatica del consenso basata sui pareri della comunità.**")
+            st.caption("L'algoritmo ordina i pareri per punteggio (voti positivi netti) prima di generare la sintesi.")
+            
+            if st.button("✨ Genera/Aggiorna Analisi AI", use_container_width=True):
+                with st.spinner("L'IA sta analizzando i pareri e calcolando i pesi..."):
+                    # 1. Recupero dati e calcolo punteggi
+                    dati_ai = []
+                    for _, row in df_legge.iterrows():
+                        score = db.get_punteggio_parere(row['Autore'], legge_assegnata)
+                        dati_ai.append({
+                            "Testo": row['Parere'],
+                            "Posizione": row['Posizione'],
+                            "Punteggio": score
+                        })
+                    
+                    # 2. Ordinamento decrescente per Punteggio
+                    dati_ai.sort(key=lambda x: x['Punteggio'], reverse=True)
+                    
+                    # 3. Generazione Report
+                    if dati_ai:
+                        report = utils.genera_sintesi_legislativa(dati_ai, legge_assegnata)
+                        st.markdown(report)
+                    else:
+                        st.warning("Nessun parere disponibile per l'analisi.")
 
         st.markdown("### Dettaglio Contributi")
         
