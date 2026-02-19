@@ -14,6 +14,11 @@ def render_dashboard():
         if 'nav_cittadino' not in st.session_state:
             st.session_state.nav_cittadino = "home"
 
+        if st.session_state.nav_cittadino != "home":
+            if st.button("⬅️ Torna alla Home"):
+                st.session_state.nav_cittadino = "home"
+                st.rerun()
+
         if st.session_state.nav_cittadino == "home":
             st.markdown("### Pannello di Controllo")
             st.write("Seleziona un'attività per iniziare:")
@@ -40,25 +45,12 @@ def render_dashboard():
                         st.rerun()
 
         elif st.session_state.nav_cittadino == "partecipa":
-            # Layout centrato con pulsante Indietro isolato a sinistra
-            c1, c2, c3 = st.columns([2, 8, 2], vertical_alignment="center")
-            with c1:
-                if st.button("⬅️ Home", use_container_width=True):
-                    st.session_state.nav_cittadino = "home"
-                    st.rerun()
-            with c2:
-                st.markdown("<h2 style='text-align: center; margin: 0; color: #003366;'>Area Partecipazione</h2>", unsafe_allow_html=True)
+            st.markdown("<h2 style='text-align: center; margin: 0; color: #003366;'>Area Partecipazione</h2>", unsafe_allow_html=True)
             st.divider()
             render_partecipa()
             
         elif st.session_state.nav_cittadino == "esplora":
-            c1, c2, c3 = st.columns([2, 8, 2], vertical_alignment="center")
-            with c1:
-                if st.button("⬅️ Home", use_container_width=True):
-                    st.session_state.nav_cittadino = "home"
-                    st.rerun()
-            with c2:
-                st.markdown("<h2 style='text-align: center; margin: 0; color: #003366;'>Area Esplorazione</h2>", unsafe_allow_html=True)
+            st.markdown("<h2 style='text-align: center; margin: 0; color: #003366;'>Area Esplorazione</h2>", unsafe_allow_html=True)
             st.divider()
             render_esplora()
 
@@ -71,7 +63,9 @@ def render_partecipa():
         st.subheader("Proposte di legge attive nella tua area")
         legge_selezionata = st.selectbox("Seleziona Proposta:", [p['titolo'] for p in leggi_pertinenti])
         dettaglio_legge = next(p for p in leggi_pertinenti if p['titolo'] == legge_selezionata)
-        st.info(f"ℹ️ Descrizione: {dettaglio_legge['desc']}")
+        with st.container(border=True):
+            st.markdown("### 📜 Testo della Proposta di Legge")
+            st.markdown(f"<div style='text-align: justify; font-family: serif; font-size: 1.1em; line-height: 1.6;'>{dettaglio_legge['desc']}</div>", unsafe_allow_html=True)
         
         # TABS per separare le attività
         tab_parere, tab_voti = st.tabs(["✍️ Il Tuo Parere", "🗳️ Vota Pareri Altrui"])
@@ -188,7 +182,7 @@ def render_partecipa():
                                     st.rerun()
                             
                             with col_contenuto:
-                                st.markdown(f"**{autore_parere}** - *{row.get('Posizione', 'N/A')}*")
+                                st.markdown(f"**Utente Esperto** - *{row.get('Posizione', 'N/A')}*")
                                 st.write(row['Parere'])
                                 
                                 # --- SEZIONE COMMENTI ---
@@ -202,7 +196,7 @@ def render_partecipa():
                                         commento_precedente = mio_comm.iloc[0]['Testo']
                                     
                                     for _, comm in commenti.iterrows():
-                                        st.caption(f"💬 **{comm['AutoreCommento']}**: {comm['Testo']}")
+                                        st.caption(f"💬 **Utente**: {comm['Testo']}")
                                 
                                 with st.expander("Rispondi / Commenta"):
                                     label_comm = "Invia"
@@ -229,7 +223,7 @@ def render_esplora():
     
     for legge in config.PROPOSTE_LEGGE:
         with st.expander(f"{legge['titolo']} ({legge['area']})"):
-            st.write(f"**Descrizione:** {legge['desc']}")
+            st.markdown(f"<div style='text-align: justify; font-family: serif; font-size: 1.05em; padding: 10px; background-color: #f8f9fa; border-left: 4px solid #003366; margin-bottom: 15px;'>{legge['desc']}</div>", unsafe_allow_html=True)
             st.markdown("#### 💬 Dibattito pubblico:")
             if not df_pareri.empty and 'Legge' in df_pareri.columns:
                 commenti = df_pareri[df_pareri['Legge'] == legge['titolo']]
@@ -264,7 +258,7 @@ def render_esplora():
                                         st.caption("🔒 Solo esperti")
                             
                             with col_contenuto:
-                                st.markdown(f"**{autore_parere}** - *{row.get('Posizione', 'N/A')}*")
+                                st.markdown(f"**Utente Esperto** - *{row.get('Posizione', 'N/A')}*")
                                 st.write(row['Parere'])
                                 
                                 st.divider()
@@ -277,7 +271,7 @@ def render_esplora():
                                         commento_precedente = mio_comm.iloc[0]['Testo']
                                     
                                     for _, comm in lista_commenti.iterrows():
-                                        st.caption(f"💬 **{comm['AutoreCommento']}**: {comm['Testo']}")
+                                        st.caption(f"💬 **Utente**: {comm['Testo']}")
                                 
                                 with st.expander("Rispondi / Commenta"):
                                     label_comm = "Invia"
