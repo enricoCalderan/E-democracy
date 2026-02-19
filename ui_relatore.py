@@ -88,10 +88,15 @@ def render_dashboard():
 
         st.markdown("### Dettaglio Contributi")
         
+        # Calcolo punteggi e ordinamento
+        df_legge = df_legge.copy()
+        df_legge['Punteggio'] = df_legge.apply(lambda x: db.get_punteggio_parere(x['Autore'], legge_assegnata), axis=1)
+        df_legge = df_legge.sort_values(by='Punteggio', ascending=False)
+        
         for idx, row in df_legge.iterrows():
             # Anonimizzazione: non mostriamo l'autore
             anteprima = row['Parere'][:100] + "..." if len(row['Parere']) > 100 else row['Parere']
-            with st.expander(f"{row['Posizione']} | {anteprima}"):
+            with st.expander(f"[{row['Punteggio']} Voti] {row['Posizione']} | {anteprima}"):
                 st.write(f"**Parere completo:** {row['Parere']}")
                 
                 commenti = db.get_commenti_parere(row['Autore'], legge_assegnata)
