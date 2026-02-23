@@ -61,43 +61,43 @@ def esegui_clustering_opinioni(df, colonna_testo='Parere'):
             df['x'] = coords[:, 0]
             df['y'] = coords[:, 1]
 
-            # 5. Auto-Labeling con Gemini (Versione Potenziata)
+            # 5. Auto-Labeling con Gemini (Versione Ultra-Sintetica)
             model = genai.GenerativeModel(MODEL_TEXT)
             labels = {}
             
             for i in range(n_clusters):
-                # Prendiamo i 3 commenti più significativi di questo gruppo
                 campioni = df[df['cluster'] == i][colonna_testo].head(3).tolist()
                 
-                # Creiamo un prompt molto più "imperativo"
+                # Prompt estremamente restrittivo
                 prompt_label = f"""
-                Analizza questi pareri legislativi e scrivi un titolo di massimo 3 parole 
-                che ne riassuma il contenuto comune. 
-                NON scrivere 'Titolo:', scrivi SOLO le 3 parole.
-                
-                Esempi: 'Costi Manutenzione Strade', 'Dubbi Efficacia Tecnica', 'Privacy Dati Utenti'.
-                
-                Commenti da analizzare:
+                Analizza questi pareri e scrivi un'etichetta di MASSIMO 3 PAROLE.
+                REGOLE:
+                - Solo sostantivi e aggettivi (es. "Costi Manutenzione Strade")
+                - NO frasi complete
+                - NO punteggiatura
+                - Rispondi SOLO con le 3 parole, nient'altro.
+
+                Commenti:
                 {campioni}
                 """
                 
                 try:
-                    # Chiamata a Gemini
                     res = model.generate_content(prompt_label)
-                    titolo = res.text.strip().replace('"', '').replace('*', '')
+                    testo_ai = res.text.strip().replace('"', '').replace('*', '')
                     
-                    # Se Gemini risponde vuoto o troppo lungo, usiamo un mini-riassunto
-                    if len(titolo) > 50 or not titolo:
-                        labels[i] = f"Tema {i+1}: " + campioni[0][:20] + "..."
-                    else:
-                        labels[i] = titolo
+                    # --- TAGLIO FORZATO NEL CODICE ---
+                    # Prendiamo solo le prime 3 parole se l'AI esagera
+                    parole = testo_ai.split()
+                    titolo_breve = " ".join(parole[:3]) 
+                    
+                    # Se per qualche motivo il titolo è ancora vuoto, prendiamo un pezzetto del commento
+                    labels[i] = titolo_breve if titolo_breve else f"Tema {i+1}"
+                    
                 except Exception as e:
-                    # Se l'API fallisce ancora, usiamo il primo pezzo del primo commento come titolo
-                    print(f"Errore etichetta cluster {i}: {e}")
-                    labels[i] = f"Gruppo: {campioni[0][:25]}..."
+                    labels[i] = f"Cluster {i+1}"
 
             df['cluster_name'] = df['cluster'].map(labels)
-
+            
             # 6. Grafico Plotly
             fig = px.scatter(
                 df, x='x', y='y', color='cluster_name',
