@@ -100,7 +100,7 @@ def esegui_clustering_opinioni(df, colonna_testo='Parere'):
             df['x'] = coords[:, 0]
             df['y'] = coords[:, 1]
 
-            # 5. Auto-Labeling con Gemini (Versione Ultra-Sintetica)
+            # 5. Auto-Labeling con Gemini
             model = genai.GenerativeModel(MODEL_TEXT)
             labels = {}
             
