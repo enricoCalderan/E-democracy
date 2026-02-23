@@ -100,13 +100,13 @@ def esegui_clustering_opinioni(df, colonna_testo='Parere'):
         return None, None
 
     try:
-        # 2. Generazione Embeddings (Google text-embedding-004)
+        # 2. Generazione Embeddings (Google embedding-001)
         def get_embedding(text):
             if not isinstance(text, str) or not text.strip():
                 return np.zeros(768)
             # Task type clustering ottimizza i vettori per il raggruppamento
             result = genai.embed_content(
-                model="models/text-embedding-004",
+                model="models/embedding-001",
                 content=text,
                 task_type="clustering"
             )
