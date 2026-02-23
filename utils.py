@@ -10,6 +10,13 @@ from PyPDF2 import PdfReader
 # --- CONFIGURAZIONE MODELLO GENERATIVO ---
 MODEL_TEXT = "gemini-2.5-flash"
 
+def analizza_testo_pdf(file):
+    reader = PdfReader(file)
+    text = ""
+    for page in reader.pages:
+        text += page.extract_text() or ""
+    return text
+
 def analizza_cv_con_gemini(testo_cv):
     model = genai.GenerativeModel(MODEL_TEXT)
     
