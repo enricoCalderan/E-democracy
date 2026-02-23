@@ -99,35 +99,28 @@ def render_dashboard():
         fig_meridiano.update_traces(texttemplate='%{text}%', textposition='inside')
         st.plotly_chart(fig_meridiano, use_container_width=True)
 
-        # --- SINTESI LEGISLATIVA PESATA (AI) ---
+        # --- CLUSTERING SEMANTICO (AI) ---
         st.write("")
-        st.markdown("### Sintesi Legislativa Pesata (AI)")
+        st.markdown("### Clustering Semantico dei Pareri (AI)")
         
         with st.container(border=True):
-            st.markdown("**Analisi automatica del consenso basata sui pareri della comunità.**")
-            st.caption("L'algoritmo ordina i pareri per punteggio (voti positivi netti) prima di generare la sintesi.")
+            st.markdown("**Mappa concettuale delle opinioni.**")
+            st.caption("L'IA raggruppa i pareri per similarità semantica, identificando i temi dominanti.")
             
-            if st.button("✨ Genera/Aggiorna Analisi AI", use_container_width=True):
-                with st.spinner("L'IA sta analizzando i pareri e calcolando i pesi..."):
-                    # 1. Recupero dati e calcolo punteggi
-                    dati_ai = []
-                    for _, row in df_legge.iterrows():
-                        score = db.get_punteggio_parere(row['Autore'], legge_assegnata)
-                        dati_ai.append({
-                            "Testo": row['Parere'],
-                            "Posizione": row['Posizione'],
-                            "Punteggio": score
-                        })
+            if st.button("✨ Genera Mappa Tematica", use_container_width=True):
+                with st.spinner("Generazione embeddings e clustering in corso..."):
+                    # Filtro pareri validi (non vuoti)
+                    df_cluster = df_legge[df_legge['Parere'].apply(lambda x: isinstance(x, str) and len(x.strip()) > 5)].copy()
                     
-                    # 2. Ordinamento decrescente per Punteggio
-                    dati_ai.sort(key=lambda x: x['Punteggio'], reverse=True)
-                    
-                    # 3. Generazione Report
-                    if dati_ai:
-                        report = utils.genera_sintesi_legislativa(dati_ai, legge_assegnata)
-                        st.markdown(report)
+                    if not df_cluster.empty:
+                        df_result, fig = utils.esegui_clustering_opinioni(df_cluster, colonna_testo='Parere')
+                        
+                        if fig:
+                            st.plotly_chart(fig, use_container_width=True)
+                        else:
+                            st.warning("Dati insufficienti per generare i cluster (minimo 3 pareri richiesti).")
                     else:
-                        st.warning("Nessun parere disponibile per l'analisi.")
+                        st.warning("Nessun parere valido disponibile per l'analisi.")
 
         st.markdown("### Dettaglio Contributi")
         

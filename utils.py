@@ -2,6 +2,11 @@ from PyPDF2 import PdfReader
 import google.generativeai as genai
 import streamlit as st
 import config # Importa la configurazione per assicurarsi che genai sia configurato
+import numpy as np
+import pandas as pd
+import plotly.express as px
+from sklearn.cluster import KMeans
+from sklearn.decomposition import PCA
 
 def analizza_testo_pdf(file):
     reader = PdfReader(file)
@@ -84,3 +89,77 @@ def genera_sintesi_legislativa(lista_pareri, titolo_legge):
         return response.text
     except Exception as e:
         return f"Errore durante la generazione del report: {e}"
+
+def esegui_clustering_opinioni(df, colonna_testo='Parere'):
+    """
+    Esegue clustering semantico sui pareri usando Embeddings + KMeans + PCA.
+    Restituisce il DataFrame arricchito e il grafico Plotly.
+    """
+    # 1. Controllo Dati
+    if df.empty or len(df) < 3:
+        return None, None
+
+    try:
+        # 2. Generazione Embeddings (Google text-embedding-004)
+        def get_embedding(text):
+            if not isinstance(text, str) or not text.strip():
+                return np.zeros(768)
+            # Task type clustering ottimizza i vettori per il raggruppamento
+            result = genai.embed_content(
+                model="models/text-embedding-004",
+                content=text,
+                task_type="clustering"
+            )
+            return result['embedding']
+
+        # Applica la funzione a tutti i pareri
+        embeddings = df[colonna_testo].apply(get_embedding).tolist()
+        matrix = np.array(embeddings)
+
+        # 3. Clustering (K-Means)
+        # Determina dinamicamente il numero di cluster (max 4 o n_samples)
+        n_clusters = min(4, len(df))
+        kmeans = KMeans(n_clusters=n_clusters, random_state=42, n_init=10)
+        df['cluster'] = kmeans.fit_predict(matrix)
+
+        # 4. Riduzione Dimensionale (PCA) per visualizzazione 2D
+        pca = PCA(n_components=2)
+        components = pca.fit_transform(matrix)
+        df['pca_x'] = components[:, 0]
+        df['pca_y'] = components[:, 1]
+
+        # 5. Auto-Labeling con Gemini
+        model = genai.GenerativeModel('gemini-2.5-flash')
+        cluster_labels = {}
+        
+        for c in range(n_clusters):
+            # Prendi i 3 commenti più rappresentativi (i primi del cluster)
+            sample_comments = df[df['cluster'] == c][colonna_testo].head(3).tolist()
+            text_sample = "\n".join([f"- {t}" for t in sample_comments])
+            
+            prompt = f"""
+            Analizza questi commenti legislativi e genera un TITOLO SINTETICO (max 3-4 parole) che descriva il tema comune.
+            Esempi: "Preoccupazioni Privacy", "Supporto Economico", "Critiche procedurali".
+            
+            Commenti:
+            {text_sample}
+            """
+            response = model.generate_content(prompt)
+            cluster_labels[c] = response.text.strip()
+
+        df['cluster_name'] = df['cluster'].map(cluster_labels)
+
+        # 6. Visualizzazione Plotly Interattiva
+        fig = px.scatter(df, x='pca_x', y='pca_y', color='cluster_name',
+                         hover_data={colonna_testo: True, 'pca_x': False, 'pca_y': False, 'cluster': False, 'cluster_name': False},
+                         title="Mappa Semantica dei Pareri (AI Clustering)",
+                         labels={'cluster_name': 'Tematica'})
+        
+        fig.update_traces(marker=dict(size=12, line=dict(width=1, color='DarkSlateGrey')))
+        fig.update_layout(plot_bgcolor='rgba(0,0,0,0)', xaxis=dict(showgrid=False, showticklabels=False), yaxis=dict(showgrid=False, showticklabels=False))
+
+        return df, fig
+
+    except Exception as e:
+        st.error(f"Errore nel processo di clustering: {e}")
+        return None, None
