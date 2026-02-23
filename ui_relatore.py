@@ -20,24 +20,21 @@ def render_dashboard():
         df_legge = df_pareri[df_pareri['Legge'] == legge_assegnata]
         # Normalizzazione colonne
         if 'Posizione' not in df_legge.columns: df_legge['Posizione'] = "Non specificato"
+        if 'Giudizio' not in df_legge.columns: df_legge['Giudizio'] = "Non specificato"
 
     if not df_legge.empty:
         # --- CALCOLO KPI ---
         totale = len(df_legge)
         favorevoli = len(df_legge[df_legge['Posizione'].str.contains("Favorevole", case=False, na=False)])
         contrari = len(df_legge[df_legge['Posizione'].str.contains("Contrario", case=False, na=False)])
-        modifiche = len(df_legge[df_legge['Posizione'].str.contains("Modifica", case=False, na=False)])
 
         # --- VISUALIZZAZIONE METRICHE ---
         with st.container(border=True):
-            col1, col2, col3, col4 = st.columns(4)
+            col1, col2, col3 = st.columns(3)
             col1.metric("Totale Pareri", totale)
             col2.metric("Favorevoli", favorevoli)
             col3.metric("Contrari", contrari)
-            col4.metric("Richieste Modifica", modifiche)
 
-        st.write("")
-        
         # --- GRAFICO ANALISI CONSENSO ---
         st.markdown("### Analisi del Consenso")
         
@@ -49,16 +46,62 @@ def render_dashboard():
         color_map = {
             "✅ Favorevole": "#28a745",           # Verde
             "❌ Contrario": "#dc3545",            # Rosso
-            "✏️ Proposta di Modifica": "#17a2b8"  # Azzurro
         }
         
         fig = px.pie(dati_grafico, values='Conteggio', names='Posizione', hole=0.4, 
                      color='Posizione', color_discrete_map=color_map)
         st.plotly_chart(fig, use_container_width=True)
 
+        # --- GRAFICO (GIUDIZIO MAGGIORITARIO) ---
+        st.markdown("### Profilo dei Giudizi")
+        st.caption("Distribuzione percentuale dei giudizi espressi dalla comunità (Giudizio Maggioritario).")
+        
+        scala_giudizio = ['Ottimo', 'Molto Buono', 'Buono', 'Passabile', 'Mediocre', 'Rifiuto']
+        
+        # Calcolo conteggi per ogni giudizio
+        conteggi_giudizio = df_legge['Giudizio'].value_counts().reindex(scala_giudizio, fill_value=0).reset_index()
+        conteggi_giudizio.columns = ['Giudizio', 'Conteggio']
+        
+        # Calcolo percentuali
+        totale_voti = conteggi_giudizio['Conteggio'].sum()
+        conteggi_giudizio['Percentuale'] = (conteggi_giudizio['Conteggio'] / totale_voti * 100).round(1) if totale_voti > 0 else 0
+        
+        # Aggiunta colonna per asse Y per evitare errori di lunghezza
+        conteggi_giudizio['Legge'] = legge_assegnata
+        
+        # Mappa colori semantica (Azzurro/Verde -> Rosso)
+        color_map_giudizio = {
+            'Ottimo': '#006400',       # Dark Green
+            'Molto Buono': '#32CD32',  # Lime Green
+            'Buono': '#87CEEB',        # Sky Blue
+            'Passabile': '#FFD700',    # Gold
+            'Mediocre': '#FFA500',     # Orange
+            'Rifiuto': '#DC143C'       # Crimson
+        }
+        
+        # Creazione Stacked Bar Chart Orizzontale
+        fig_meridiano = px.bar(conteggi_giudizio, x='Percentuale', y='Legge', 
+                               color='Giudizio', orientation='h',
+                               color_discrete_map=color_map_giudizio,
+                               text='Percentuale',
+                               category_orders={"Giudizio": scala_giudizio})
+        
+        fig_meridiano.update_layout(
+            xaxis_title="Percentuale (%)", 
+            yaxis_title="", 
+            barmode='stack', 
+            height=280,
+            legend=dict(orientation="h", yanchor="bottom", y=1.1, xanchor="center", x=0.5, title=None),
+            xaxis=dict(showgrid=True, gridcolor='lightgray', tickvals=[0, 25, 50, 75, 100], range=[0, 100]),
+            margin=dict(t=60)
+        )
+        fig_meridiano.add_vline(x=50, line_width=3, line_dash="dash", line_color="black", annotation_text="<b>Mediana</b>", annotation_position="top")
+        fig_meridiano.update_traces(texttemplate='%{text}%', textposition='inside')
+        st.plotly_chart(fig_meridiano, use_container_width=True)
+
         # --- SINTESI LEGISLATIVA PESATA (AI) ---
         st.write("")
-        st.markdown("### 🧠 Sintesi Legislativa Pesata (AI)")
+        st.markdown("###Sintesi Legislativa Pesata (AI)")
         
         with st.container(border=True):
             st.markdown("**Analisi automatica del consenso basata sui pareri della comunità.**")
@@ -95,7 +138,12 @@ def render_dashboard():
         
         for idx, row in df_legge.iterrows():
             # Anonimizzazione: non mostriamo l'autore
-            with st.expander(f"[Valutazione: {row['Punteggio']}] {row['Posizione']}"):
+            
+            # FILTRO: Non mostrare nel dettaglio i voti senza commento scritto
+            if not isinstance(row['Parere'], str) or not row['Parere'].strip():
+                continue
+                
+            with st.expander(f"[Valutazione: {row['Punteggio']}] {row['Posizione']} | Giudizio: {row.get('Giudizio', 'N/A')}"):
                 st.write(f"**Parere completo:** {row['Parere']}")
                 
                 commenti = db.get_commenti_parere(row['Autore'], legge_assegnata)

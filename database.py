@@ -35,18 +35,19 @@ def get_parlamentare_db(nome, cognome):
     except Exception:
         return None
 
-def salva_parere(legge, testo, area, posizione, autore):
+def salva_parere(legge, testo, area, posizione, autore, giudizio):
     if os.path.exists("database_pareri.csv"):
         df = pd.read_csv("database_pareri.csv", on_bad_lines='skip')
         if 'Posizione' not in df.columns: df['Posizione'] = "Non specificato"
         if 'Autore' not in df.columns: df['Autore'] = "Anonimo"
+        if 'Giudizio' not in df.columns: df['Giudizio'] = "Non specificato"
         
         # Rimuove eventuale parere precedente
         df = df[~((df['Legge'] == legge) & (df['Autore'] == autore))]
     else:
-        df = pd.DataFrame(columns=["Legge", "Parere", "Area", "Posizione", "Autore"])
+        df = pd.DataFrame(columns=["Legge", "Parere", "Area", "Posizione", "Autore", "Giudizio"])
 
-    nuovo_parere = pd.DataFrame([[legge, testo, area, posizione, autore]], columns=["Legge", "Parere", "Area", "Posizione", "Autore"])
+    nuovo_parere = pd.DataFrame([[legge, testo, area, posizione, autore, giudizio]], columns=["Legge", "Parere", "Area", "Posizione", "Autore", "Giudizio"])
     df_aggiornato = pd.concat([df, nuovo_parere], ignore_index=True)
     df_aggiornato.to_csv("database_pareri.csv", index=False)
 

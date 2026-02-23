@@ -83,6 +83,7 @@ def render_partecipa():
                 df_pareri = db.get_tutti_pareri()
                 testo_precedente = ""
                 posizione_precedente = 0
+                giudizio_precedente = "Buono" # Default
                 gia_votato = False
                 dati_precedenti = None
 
@@ -90,6 +91,7 @@ def render_partecipa():
                     # Normalizzazione colonne
                     if 'Posizione' not in df_pareri.columns: df_pareri['Posizione'] = "Non specificato"
                     if 'Autore' not in df_pareri.columns: df_pareri['Autore'] = "Anonimo"
+                    if 'Giudizio' not in df_pareri.columns: df_pareri['Giudizio'] = "Buono"
 
                     parere_esistente = df_pareri[(df_pareri['Legge'] == legge_selezionata) & 
                                                  (df_pareri['Autore'] == autore_corrente)]
@@ -99,7 +101,8 @@ def render_partecipa():
                         dati_precedenti = parere_esistente.iloc[0]
                         testo_precedente = dati_precedenti['Parere']
                         pos_str = dati_precedenti['Posizione']
-                        opzioni = ["✅ Favorevole", "❌ Contrario", "✏️ Proposta di Modifica"]
+                        giudizio_precedente = dati_precedenti.get('Giudizio', "Buono")
+                        opzioni = ["✅ Favorevole", "❌ Contrario"]
                         if pos_str in opzioni:
                             posizione_precedente = opzioni.index(pos_str)
 
@@ -111,6 +114,7 @@ def render_partecipa():
                     st.success("**HAI GIÀ PARTECIPATO A QUESTA CONSULTAZIONE**")
                     with st.expander("Visualizza il tuo parere attuale", expanded=False):
                         st.write(f"**La tua posizione:** {dati_precedenti['Posizione']}")
+                        st.write(f"**Giudizio Maggioritario:** {dati_precedenti.get('Giudizio', 'N/A')}")
                         st.write(f"**Il tuo commento:** {dati_precedenti['Parere']}")
                     
                     # Gestione stato modifica
@@ -133,16 +137,53 @@ def render_partecipa():
                     label_btn = "Invia al Parlamento"
 
                 if mostra_form:
-                    with st.form("form_parere"):
-                        posizione = st.radio("Posizione:", ["✅ Favorevole", "❌ Contrario", "✏️ Proposta di Modifica"], index=posizione_precedente)
-                        testo_parere = st.text_area("Argomentazione / Testo dell'intervento:", value=testo_precedente)
-                        
-                        if st.form_submit_button(label_btn) and testo_parere:
-                            db.salva_parere(legge_selezionata, testo_parere, st.session_state.user_info['area'], posizione, autore_corrente)
-                            if gia_votato:
-                                st.session_state[f"edit_mode_{legge_selezionata}"] = False
-                            st.success("Operazione completata!")
-                            st.rerun()
+                    # Rimosso st.form per permettere interattività dinamica
+                    st.markdown("##### 1. Orientamento Generale")
+                    
+                    # Opzioni posizione
+                    opzioni_pos = ["✅ Favorevole", "❌ Contrario"]
+                    
+                    # Gestione stato widget per interattività
+                    key_pos = f"radio_pos_{legge_selezionata}"
+                    if key_pos not in st.session_state:
+                        st.session_state[key_pos] = opzioni_pos[posizione_precedente]
+                    
+                    posizione = st.radio("Esprimi il tuo voto:", opzioni_pos, key=key_pos, horizontal=True)
+                    
+                    st.markdown("##### 2. Giudizio Maggioritario (Obbligatorio)")
+                    st.caption("Valuta la qualità complessiva della proposta. Le opzioni variano in base al tuo orientamento.")
+                    
+                    # Logica condizionale per le opzioni del giudizio
+                    if "Favorevole" in posizione:
+                        scala_giudizio = ['Ottimo', 'Molto Buono', 'Buono', 'Passabile']
+                        colore_box = "#e6fffa" # Sfondo verdino
+                    else:
+                        scala_giudizio = ['Mediocre', 'Rifiuto']
+                        colore_box = "#fff5f5" # Sfondo rossiccio
+                    
+                    # Calcolo valore default coerente
+                    valore_default = scala_giudizio[0]
+                    if giudizio_precedente in scala_giudizio:
+                        valore_default = giudizio_precedente
+                    
+                    # Aspetto grafico modificato con container colorato
+                    with st.container():
+                        st.markdown(f"<div style='background-color: {colore_box}; padding: 15px; border-radius: 10px; border: 1px solid #ddd;'>", unsafe_allow_html=True)
+                        giudizio = st.select_slider("Seleziona il livello di gradimento:", options=scala_giudizio, value=valore_default, key=f"slider_{legge_selezionata}")
+                        st.markdown("</div>", unsafe_allow_html=True)
+                    
+                    st.markdown("##### 3. Motivazione Tecnica (Opzionale)")
+                    st.caption("Puoi lasciare questo campo vuoto se vuoi esprimere solo il voto.")
+                    testo_parere = st.text_area("Argomentazione / Testo dell'intervento:", value=testo_precedente)
+                    
+                    st.write("")
+                    # Pulsante invio (ora accetta anche testo vuoto)
+                    if st.button(label_btn, type="primary", use_container_width=True):
+                        db.salva_parere(legge_selezionata, testo_parere, st.session_state.user_info['area'], posizione, autore_corrente, giudizio)
+                        if gia_votato:
+                            st.session_state[f"edit_mode_{legge_selezionata}"] = False
+                        st.success("Operazione completata!")
+                        st.rerun()
 
             # --- TAB 2: VOTAZIONE ALTRI PARERI ---
             with tab_voti:
@@ -154,6 +195,9 @@ def render_partecipa():
                     altri_pareri = df_pareri[(df_pareri['Legge'] == legge_selezionata) & 
                                              (df_pareri['Autore'] != autore_corrente)]
                     
+                    # FILTRO: Mostra solo pareri con testo (esclude voti silenziosi)
+                    altri_pareri = altri_pareri[altri_pareri['Parere'].apply(lambda x: isinstance(x, str) and len(x.strip()) > 0)]
+
                     if not altri_pareri.empty:
                         for idx, row in altri_pareri.iterrows():
                             with st.container(border=True):
@@ -242,6 +286,9 @@ def render_esplora():
             st.markdown("#### 💬 Dibattito pubblico:")
             if not df_pareri.empty and 'Legge' in df_pareri.columns:
                 commenti = df_pareri[df_pareri['Legge'] == legge['titolo']]
+                # FILTRO: Mostra solo pareri con testo
+                commenti = commenti[commenti['Parere'].apply(lambda x: isinstance(x, str) and len(x.strip()) > 0)]
+                
                 if not commenti.empty:
                     for idx, row in commenti.iterrows():
                         with st.container(border=True):
