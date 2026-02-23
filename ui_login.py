@@ -4,6 +4,12 @@ import utils
 import os
 
 def render_login():
+    if 'show_privacy' not in st.session_state:
+        st.session_state.show_privacy = False
+    if st.session_state.show_privacy:
+        render_privacy_page()
+        return
+
     st.markdown("<h1 style='text-align: center;'>Portale Partecipazione Legislativa</h1>", unsafe_allow_html=True)
     st.markdown("<p style='text-align: center; color: #666;'>Piattaforma istituzionale per il contributo tecnico ai processi decisionali.</p>", unsafe_allow_html=True)
     st.write("")
@@ -54,6 +60,7 @@ def render_login():
                                     # 3. Nuovo Cittadino -> Registrazione
                                     st.session_state.temp_anagrafica = {"nome": nome, "cognome": cognome}
                                     st.session_state.fase_registrazione = True
+                                    st.session_state.privacy_accepted = False
                                     st.rerun()
                         else:
                             st.warning("Inserire nome e cognome per procedere.")
@@ -96,6 +103,21 @@ def render_login():
     
     else:
         # FASE 2: REGISTRAZIONE NUOVO CITTADINO
+        if not st.session_state.get('privacy_accepted', False):
+            st.markdown("### Richiesta Consenso Privacy")
+            st.warning("Per procedere con la registrazione, è necessario leggere e accettare l'informativa sul trattamento dei dati personali.")
+            render_privacy_text()
+            st.divider()
+            c1, c2 = st.columns(2)
+            if c1.button("Rifiuto", use_container_width=True):
+                st.session_state.fase_registrazione = False
+                st.session_state.privacy_accepted = False
+                st.rerun()
+            if c2.button("Ho letto e Accetto", type="primary", use_container_width=True):
+                st.session_state.privacy_accepted = True
+                st.rerun()
+            return
+
         st.markdown(f"### Benvenuto {st.session_state.temp_anagrafica['nome']}, completa il profilo")
         st.info("Non risulti registrato nei nostri sistemi. Carica il tuo CV per permettere all'AI di assegnarti un'area di competenza.")
         
@@ -130,3 +152,71 @@ def render_login():
                         st.rerun()
             else:
                 st.error("Compila tutti i campi obbligatori.")
+
+    # --- FOOTER PRIVACY ---
+    st.divider()
+    c1, c2, c3 = st.columns([1, 2, 1])
+    with c2:
+        if st.button("🔒 Informativa Privacy e Trattamento Dati", use_container_width=True):
+            st.session_state.show_privacy = True
+            st.rerun()
+
+def render_privacy_text():
+    st.markdown("## Informativa sul Trattamento dei Dati Personali")
+    st.caption("Ultimo aggiornamento: 23 Febbraio 2026")
+    
+    st.markdown("""
+    ### Premessa e Riferimenti Normativi
+    La presente piattaforma di Analisi Legislativa si impegna a proteggere la privacy degli utenti e a garantire la trasparenza nel trattamento dei dati. La presente informativa è redatta in conformità a:
+    - **Regolamento (UE) 2016/679** (Regolamento Generale sulla Protezione dei Dati - GDPR).
+    - **D.Lgs. 196/2003** (Codice in materia di protezione dei dati personali), come modificato dal D.Lgs. 101/2018.
+    - **Regolamento (UE) 2024/1689** (Artificial Intelligence Act), con particolare riferimento agli obblighi di trasparenza per i sistemi di IA generativa.
+
+    ### 1. Titolare del Trattamento
+    Il trattamento dei dati è finalizzato esclusivamente alla ricerca statistica e all'analisi del consenso in ambito legislativo. Il Titolare garantisce che i dati non saranno ceduti a terzi per scopi commerciali. Per qualsiasi richiesta (accesso, rettifica o cancellazione), contattare:
+    
+    **Referente Privacy:** Enrico Calderan
+    **Email:** admin@tprogetto.it
+
+    ### 2. Tipologia di Dati Raccolti
+    La piattaforma raccoglie le seguenti categorie di dati:
+    - **Dati di Opinione:** Orientamento (Favorevole/Contrario), Giudizio Maggioritario (scala da Ottimo a Rifiuto) e commenti testuali.
+    - **Dati Professionali (CV):** Informazioni caricate volontariamente dall'utente in formato PDF, processate per identificare l'area di competenza e la seniority.
+    - **Dati Tecnici:** Indirizzo IP, timestamp e log di sessione, necessari per garantire la sicurezza del sistema e prevenire votazioni multiple fraudolente.
+
+    ### 3. Base Giuridica del Trattamento
+    Ai sensi dell'Art. 6 del GDPR, il trattamento dei dati si fonda sul **Consenso Esplicito dell'Interessato**. L'utente esprime il proprio consenso interagendo con la piattaforma, effettuando il login e accettando i termini prima del caricamento di qualsiasi documento (CV) o dell'invio di pareri.
+
+    ### 4. Utilizzo dell'Intelligenza Artificiale (AI Act)
+    In conformità con l'AI Act (UE 2024/1689), si informa l'utente che:
+    - I testi dei pareri e i contenuti dei CV sono analizzati tramite il modello **Google Gemini API**.
+    - I dati vengono inviati ai server di Google in forma pseudonimizzata.
+    - Il sistema effettua un'analisi automatizzata per categorizzare le competenze, ma **non adotta decisioni automatizzate** che producano effetti giuridici significativi senza la supervisione di un analista umano (il Relatore).
+    - I dati forniti non vengono utilizzati da Google per l'addestramento dei propri modelli globali (Enterprise Privacy Policy).
+
+    ### 5. Finalità e Modalità del Trattamento
+    I dati vengono trattati esclusivamente per:
+    - **Analisi Legislativa:** Generare report di sintesi per i parlamentari e i relatori delle proposte di legge.
+    - **Ponderazione del Consenso:** Calcolare il peso delle opinioni in base al profilo professionale dell'utente.
+    - **Visualizzazione:** Alimentare i grafici sul Giudizio Maggioritario nelle dashboard istituzionali.
+
+    ### 6. Conservazione dei Dati e Cookie Policy
+    - **Conservazione:** I dati saranno conservati per il tempo strettamente necessario al raggiungimento delle finalità di ricerca o fino alla richiesta di cancellazione da parte dell'utente.
+    - **Cookie:** L'applicazione utilizza solo cookie tecnici (essenziali per il funzionamento di Streamlit e la gestione della sessione). Non sono presenti cookie di profilazione o di tracciamento pubblicitario.
+
+    ### 7. Diritti dell'Interessato
+    In ogni momento, ai sensi degli Artt. 15-22 del GDPR, l'utente può esercitare il diritto di:
+    - Ottenere la conferma dell'esistenza dei propri dati.
+    - Richiedere la rettifica o la cancellazione totale (Diritto all'Oblio).
+    - Opporsi al trattamento per motivi legittimi.
+    - Proporre reclamo all'Autorità Garante per la Protezione dei Dati Personali.
+
+    **Dichiarazione di Consenso:** Proseguendo con l'utilizzo della piattaforma e cliccando sui pulsanti di invio, l'utente dichiara di aver preso visione della presente informativa e acconsente al trattamento dei propri dati secondo le modalità descritte.
+    """)
+    
+def render_privacy_page():
+    render_privacy_text()
+    st.divider()
+    if st.button("⬅️ Torna alla Home", use_container_width=True):
+        st.session_state.show_privacy = False
+        st.rerun()

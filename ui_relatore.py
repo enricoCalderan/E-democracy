@@ -101,7 +101,7 @@ def render_dashboard():
 
         # --- SINTESI LEGISLATIVA PESATA (AI) ---
         st.write("")
-        st.markdown("###Sintesi Legislativa Pesata (AI)")
+        st.markdown("### Sintesi Legislativa Pesata (AI)")
         
         with st.container(border=True):
             st.markdown("**Analisi automatica del consenso basata sui pareri della comunità.**")

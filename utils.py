@@ -75,9 +75,6 @@ def genera_sintesi_legislativa(lista_pareri, titolo_legge):
     ### Criticità Costruttive e Dissenso Qualificato
     Analizza i pareri 'Contrari' che hanno comunque ottenuto votazioni positive (critiche ritenute valide dalla comunità). Spiega quali sono i rischi tecnici o i timori procedurali evidenziati, integrando anche i temi ricorrenti emersi dai commenti più apprezzati.
 
-    ### Proposte di Emendamento e Modifica
-    Presenta una lista di suggerimenti pratici estratti dai pareri di 'Modifica' con il ranking più alto. Focalizzati sulle soluzioni proposte per migliorare il testo legislativo.
-
     DATI DI INPUT DA ANALIZZARE:
     {testo_dati}
     """
