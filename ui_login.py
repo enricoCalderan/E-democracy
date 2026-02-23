@@ -163,7 +163,7 @@ def render_login():
 
 def render_privacy_text():
     st.markdown("## Informativa sul Trattamento dei Dati Personali")
-    st.caption("Ultimo aggiornamento: 23 Febbraio 2026")
+    st.caption("Ultimo aggiornamento: 19 Febbraio 2026")
     
     st.markdown("""
     ### Premessa e Riferimenti Normativi
@@ -176,7 +176,7 @@ def render_privacy_text():
     Il trattamento dei dati è finalizzato esclusivamente alla ricerca statistica e all'analisi del consenso in ambito legislativo. Il Titolare garantisce che i dati non saranno ceduti a terzi per scopi commerciali. Per qualsiasi richiesta (accesso, rettifica o cancellazione), contattare:
     
     **Referente Privacy:** Enrico Calderan
-    **Email:** admin@tprogetto.it
+    **Email:** admin@progetto.it
 
     ### 2. Tipologia di Dati Raccolti
     La piattaforma raccoglie le seguenti categorie di dati:

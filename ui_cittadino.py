@@ -6,6 +6,7 @@ import database as db
 def render_dashboard():
     st.markdown(f"<h1 style='text-align: center;'>Benvenuto/a, {st.session_state.user_info['nome']}</h1>", unsafe_allow_html=True)
     st.markdown(f"<h3 style='text-align: center; color: #666;'>Area di Competenza: {st.session_state.user_info['area']}</h3>", unsafe_allow_html=True)
+    st.markdown("<p style='text-align: center;'>Per ulteriori informazioni, visita la pagina ufficiale: <a href='https://www.parlamento.it/home' target='_blank'>Parlamento Italiano</a></p>", unsafe_allow_html=True)
     
     if st.session_state.ruolo == "Visualizzatore":
         st.info("ℹ️ Il tuo profilo 'Visualizzatore' ti permette di consultare tutte le proposte e i commenti, ma non di intervenire attivamente.")
