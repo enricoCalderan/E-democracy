@@ -1,4 +1,3 @@
-from PyPDF2 import PdfReader
 import google.generativeai as genai
 import streamlit as st
 import numpy as np
@@ -6,102 +5,112 @@ import pandas as pd
 import plotly.express as px
 from sklearn.cluster import KMeans
 from sklearn.decomposition import PCA
+from PyPDF2 import PdfReader
 
-# --- CONFIGURAZIONE MODELLI 2026 ---
-# Utilizziamo Gemini 3 Flash per la generazione e l'ultima versione embedding
-MODEL_TEXT = "gemini-3-flash" 
-MODEL_EMBEDDING = "text-embedding-004" 
+# --- CONFIGURAZIONE MODELLO GENERATIVO ---
+MODEL_TEXT = "gemini-3-flash"
 
-def analizza_testo_pdf(file):
-    reader = PdfReader(file)
-    testo = "".join([page.extract_text() for page in reader.pages])
-    return testo
-
-def analizza_cv_con_gemini(testo_cv):
-    model = genai.GenerativeModel(MODEL_TEXT)
-    prompt = f"Analizza questo CV (Area: Tecnologia, Diritto, Ambiente, Economia) e fanne una descrizione formale di 15 parole: {testo_cv[:3000]}"
+def get_available_embedding_model():
+    """Trova dinamicamente il miglior modello di embedding disponibile nell'account"""
     try:
-        response = model.generate_content(prompt)
-        # Logica di parsing semplificata per brevità
-        return "Area Rilevata", response.text
-    except Exception as e:
-        return None, None
+        for m in genai.list_models():
+            if 'embedContent' in m.supported_generation_methods:
+                return m.name # Restituisce es. 'models/text-embedding-004'
+    except:
+        return "models/text-embedding-004" # Fallback standard
+    return "models/text-embedding-004"
 
 def esegui_clustering_opinioni(df, colonna_testo='Parere'):
     """
-    Esegue clustering semantico con gestione robusta degli errori 404.
+    Esegue il clustering risolvendo i problemi di 404 e dati insufficienti.
     """
-    # 1. Controllo Dati (Soglia minima per senso matematico)
-    if df is None or len(df) < 3:
-        st.warning("📊 Dati insufficienti: servono almeno 3 pareri per creare dei gruppi significativi.")
+    # 1. Controllo rigoroso dei dati
+    if df is None or df.empty:
+        st.warning("⚠️ Il database è vuoto. Inserisci dei pareri per vedere l'analisi.")
+        return None, None
+        
+    n_campioni = len(df)
+    if n_campioni < 3:
+        st.warning(f"📊 Dati insufficienti: hai inserito {n_campioni} pareri, ma ne servono almeno 3 per creare dei gruppi.")
         return None, None
 
     try:
-        # 2. Funzione di Embedding con Fallback
-        def get_embedding(text):
-            if not isinstance(text, str) or not text.strip():
-                return np.zeros(768)
-            
-            # Proviamo a usare il modello più recente, se fallisce usiamo il legacy
-            try:
-                result = genai.embed_content(
-                    model=f"models/{MODEL_EMBEDDING}",
-                    content=text,
-                    task_type="clustering"
-                )
-            except:
-                # Fallback per compatibilità v1beta/v1
-                result = genai.embed_content(
-                    model="models/embedding-001", 
-                    content=text,
-                    task_type="clustering"
-                )
-            return result['embedding']
+        # 2. Identificazione modello
+        embedding_model_name = get_available_embedding_model()
+        
+        @st.cache_data(show_spinner=False)
+        def get_embeddings_safe(texts):
+            # Esegue l'embedding in batch per essere più veloce e stabile
+            result = genai.embed_content(
+                model=embedding_model_name,
+                content=texts,
+                task_type="clustering"
+            )
+            return result['embeddings']
 
-        with st.spinner("L'intelligenza artificiale sta raggruppando i pareri simili..."):
-            # Trasformazione in vettori
-            embeddings = [get_embedding(t) for t in df[colonna_testo].tolist()]
-            matrix = np.array(embeddings)
+        with st.spinner("🤖 L'intelligenza artificiale sta analizzando le sfumature dei pareri..."):
+            # 3. Generazione Embeddings
+            list_testi = df[colonna_testo].astype(str).tolist()
+            vectors = get_embeddings_safe(list_testi)
+            matrix = np.array(vectors)
 
-            # 3. Clustering (K-Means)
-            # Numero di cluster dinamico: mai superiore al numero di commenti
-            n_clusters = min(3, len(df))
+            # 4. Clustering (K-Means)
+            # Adattiamo il numero di cluster: se hai pochi dati, ne facciamo solo 2
+            n_clusters = 3 if n_campioni >= 5 else 2
             kmeans = KMeans(n_clusters=n_clusters, random_state=42, n_init=10)
             df['cluster'] = kmeans.fit_predict(matrix)
 
-            # 4. Riduzione Dimensionale (PCA)
+            # 5. Riduzione PCA per grafico 2D
             pca = PCA(n_components=2)
-            components = pca.fit_transform(matrix)
-            df['pca_x'] = components[:, 0]
-            df['pca_y'] = components[:, 1]
+            coords = pca.fit_transform(matrix)
+            df['x'] = coords[:, 0]
+            df['y'] = coords[:, 1]
 
-            # 5. Auto-Labeling con Gemini 3 Flash
+            # 6. Auto-Labeling con Gemini 3 Flash
             model = genai.GenerativeModel(MODEL_TEXT)
             labels = {}
             for i in range(n_clusters):
-                campioni = df[df['cluster'] == i][colonna_testo].head(2).tolist()
-                prompt = f"Riassumi in 3 parole il tema di questi commenti: {campioni}"
+                cluster_samples = df[df['cluster'] == i][colonna_testo].head(2).tolist()
+                prompt = f"Riassumi il tema comune di questi commenti legislativi in 3 parole: {cluster_samples}"
                 try:
                     res = model.generate_content(prompt)
                     labels[i] = res.text.strip().replace('"', '')
                 except:
-                    labels[i] = f"Tema {i+1}"
-
+                    labels[i] = f"Argomento {i+1}"
+            
             df['cluster_name'] = df['cluster'].map(labels)
 
-            # 6. Grafico Plotly
+            # 7. Creazione Grafico Interattivo
             fig = px.scatter(
-                df, x='pca_x', y='pca_y', 
+                df, x='x', y='y', 
                 color='cluster_name',
-                hover_data=[colonna_testo],
-                title="Mappa Semantica delle Opinioni",
-                labels={'cluster_name': 'Argomento'},
+                hover_data={colonna_testo: True, 'x': False, 'y': False},
+                title="Mappa Semantica delle Opinioni dei Cittadini",
+                labels={'cluster_name': 'Tematica rilevata'},
                 template="plotly_white"
             )
-            fig.update_traces(marker=dict(size=12, line=dict(width=1, color='DarkSlateGrey')))
             
+            fig.update_traces(marker=dict(size=15, line=dict(width=1.5, color='white')))
+            fig.update_layout(xaxis_visible=False, yaxis_visible=False) # Pulizia assi
+
             return df, fig
 
     except Exception as e:
-        st.error(f"Errore tecnico nel clustering: {e}")
+        st.error(f"❌ Errore tecnico nel clustering: {str(e)}")
+        # Log dettagliato per debug in console
+        print(f"DEBUG ERROR: {e}")
+        return None, None
+
+# --- ALTRE FUNZIONI (PDF e CV) ---
+def analizza_testo_pdf(file):
+    reader = PdfReader(file)
+    return "".join([p.extract_text() for p in reader.pages])
+
+def analizza_cv_con_gemini(testo_cv):
+    model = genai.GenerativeModel(MODEL_TEXT)
+    prompt = f"Estrai Area (Tecnologia, Diritto, Ambiente, Economia) e profilo (15 parole) da questo CV: {testo_cv[:2000]}"
+    try:
+        response = model.generate_content(prompt)
+        return "Area", response.text
+    except:
         return None, None
