@@ -8,7 +8,41 @@ from sklearn.decomposition import PCA
 from PyPDF2 import PdfReader
 
 # --- CONFIGURAZIONE MODELLO GENERATIVO ---
-MODEL_TEXT = "gemini-3-flash"
+MODEL_TEXT = "gemini-2.5-flash"
+
+def analizza_cv_con_gemini(testo_cv):
+    model = genai.GenerativeModel(MODEL_TEXT)
+    
+    prompt = f"""
+    Agisci come un Senior HR Consultant esperto in analisi tecnica. 
+    Analizza il seguente CV con un approccio analitico e formale.
+    
+    1. Identifica l'area di competenza principale esclusivamente tra: Tecnologia, Diritto, Ambiente, Economia.
+       Se il profilo è generico o in fase di formazione senza una specializzazione chiara, scrivi 'Nessuna'.
+       
+    2. Redigi un profilo professionale sintetico in terza persona (max 15 parole). 
+       ISTRUZIONI RIGOROSE: 
+       - Mantieni un registro linguistico formale e istituzionale.
+       - NON includere il nome proprio, cognome o riferimenti anagrafici della persona.
+       - Focalizzati esclusivamente su qualifica, seniority e competenze core.
+    
+    Restituisci il risultato in questo formato esatto:
+    Area: [Area scelta]
+    Descrizione: [Profilo professionale formale]
+    
+    Testo del CV: {testo_cv[:3000]}
+    """
+    
+    try:
+        response = model.generate_content(prompt)
+        text = response.text
+        area = text.split("Area:")[1].split("Descrizione:")[0].strip()
+        descrizione = text.split("Descrizione:")[1].strip()
+        return area, descrizione
+    except Exception as e:
+        st.error(f"Errore specifico AI: {e}")
+        return None, None
+    
 
 def get_available_embedding_model():
     """Trova dinamicamente il miglior modello di embedding disponibile nell'account"""
@@ -37,8 +71,6 @@ def esegui_clustering_opinioni(df, colonna_testo='Parere'):
                 task_type="clustering"
             )
 
-            # --- FIX ERRORE 'embeddings' ---
-            # Verifichiamo quale chiave ha usato l'API (singolare o plurale)
             if 'embeddings' in response:
                 vectors = response['embeddings']
             elif 'embedding' in response:
