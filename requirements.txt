@@ -4,3 +4,4 @@ google-generativeai
 feedparser
 PyPDF2
 plotly
+scikit-learn
