@@ -61,16 +61,6 @@ def get_available_embedding_model():
         return "models/text-embedding-004" # Fallback standard
     return "models/text-embedding-004"
 
-def get_available_embedding_model():
-    """Trova il modello di embedding corretto per evitare l'errore 404"""
-    try:
-        for m in genai.list_models():
-            if 'embedContent' in m.supported_generation_methods:
-                return m.name
-    except:
-        return "models/text-embedding-004"
-    return "models/text-embedding-004"
-
 def esegui_clustering_opinioni(df, colonna_testo='Parere'):
     if df is None or df.empty or len(df) < 3:
         st.warning("Servono almeno 3 pareri per attivare il clustering AI.")
@@ -80,65 +70,79 @@ def esegui_clustering_opinioni(df, colonna_testo='Parere'):
         model_name = get_available_embedding_model()
         list_testi = df[colonna_testo].astype(str).tolist()
 
-        with st.spinner("L'IA sta organizzando i pareri per temi..."):
-            # 1. GENERAZIONE EMBEDDINGS
+        with st.spinner("Analisi semantica in corso..."):
+            # Chiamata API
             response = genai.embed_content(
                 model=model_name,
                 content=list_testi,
                 task_type="clustering"
             )
 
-            # Estrazione sicura dei vettori
-            vectors = response.get('embeddings') or response.get('embedding')
-            if vectors is None:
-                st.error("L'API non ha restituito vettori validi.")
+            if 'embeddings' in response:
+                vectors = response['embeddings']
+            elif 'embedding' in response:
+                vectors = response['embedding']
+            else:
+                # Debug estremo se non troviamo nessuna delle due
+                st.error(f"Struttura API imprevista. Chiavi ricevute: {response.keys()}")
                 return None, None
             
             matrix = np.array(vectors)
 
-            # 2. CLUSTERING K-MEANS
+            # 3. Clustering K-Means
             n_clusters = 3 if len(df) >= 5 else 2
             kmeans = KMeans(n_clusters=n_clusters, random_state=42, n_init=10)
             df['cluster'] = kmeans.fit_predict(matrix)
 
-            # 3. RIDUZIONE PCA (Da 768D a 2D per il grafico)
+            # 4. Riduzione PCA per grafico
             pca = PCA(n_components=2)
             coords = pca.fit_transform(matrix)
             df['x'] = coords[:, 0]
             df['y'] = coords[:, 1]
 
-            # 4. AUTO-LABELING BATCH (Una sola chiamata per tutti i cluster)
+            # 5. Auto-Labeling con Gemini
             model = genai.GenerativeModel(MODEL_TEXT)
+            labels = {}
             
-            # Prepariamo un unico prompt per tutti i gruppi
-            prompt_batch = "Analizza questi gruppi di commenti e per ognuno scrivi un titolo di MAX 3 PAROLE.\n"
             for i in range(n_clusters):
                 campioni = df[df['cluster'] == i][colonna_testo].head(3).tolist()
-                prompt_batch += f"\nGRUPPO {i}: {campioni}"
-            prompt_batch += "\n\nRispondi solo con l'elenco dei titoli, uno per riga."
+                
+                # Prompt estremamente restrittivo
+                prompt_label = f"""
+                Analizza questi pareri e scrivi un'etichetta di MASSIMO 3 PAROLE.
+                REGOLE:
+                - Solo sostantivi e aggettivi (es. "Costi Manutenzione Strade")
+                - NO frasi complete
+                - NO punteggiatura
+                - Rispondi SOLO con le 3 parole, nient'altro.
 
-            labels = {}
-            try:
-                res = model.generate_content(prompt_batch)
-                # Pulizia della risposta: prendiamo le righe e tagliamo a 3 parole
-                righe = [r.replace("- ", "").strip() for r in res.text.strip().split("\n") if r.strip()]
-                for i in range(n_clusters):
-                    if i < len(righe):
-                        labels[i] = " ".join(righe[i].split()[:3]).replace("*", "")
-                    else:
-                        labels[i] = f"Tema {i+1}"
-            except:
-                for i in range(n_clusters): labels[i] = f"Area Tematica {i+1}"
+                Commenti:
+                {campioni}
+                """
+                
+                try:
+                    res = model.generate_content(prompt_label)
+                    testo_ai = res.text.strip().replace('"', '').replace('*', '')
+                    
+                    # --- TAGLIO FORZATO NEL CODICE ---
+                    # Prendiamo solo le prime 3 parole se l'AI esagera
+                    parole = testo_ai.split()
+                    titolo_breve = " ".join(parole[:3]) 
+                    
+                    # Se per qualche motivo il titolo è ancora vuoto, prendiamo un pezzetto del commento
+                    labels[i] = titolo_breve if titolo_breve else f"Tema {i+1}"
+                    
+                except Exception as e:
+                    labels[i] = f"Cluster {i+1}"
 
             df['cluster_name'] = df['cluster'].map(labels)
             
-            # 5. GRAFICO PLOTLY
+            # 6. Grafico Plotly
             fig = px.scatter(
                 df, x='x', y='y', color='cluster_name',
-                hover_data={colonna_testo: True, 'x': False, 'y': False, 'cluster_name': False},
-                title="Mappa Semantica delle Opinioni",
-                template="plotly_white",
-                color_discrete_sequence=px.colors.qualitative.Safe
+                hover_data={colonna_testo: True, 'x': False, 'y': False},
+                title="Mappa delle Opinioni (Clustering Semantico)",
+                template="plotly_white"
             )
             fig.update_traces(marker=dict(size=14, line=dict(width=1, color='white')))
             fig.update_layout(xaxis_visible=False, yaxis_visible=False)
