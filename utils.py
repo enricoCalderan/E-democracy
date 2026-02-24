@@ -8,7 +8,7 @@ from sklearn.decomposition import PCA
 from PyPDF2 import PdfReader
 
 # --- CONFIGURAZIONE MODELLO GENERATIVO ---
-MODEL_TEXT = "gemini-1.5-flash"
+MODEL_TEXT = "gemini-2.5-flash"
 
 def analizza_testo_pdf(file):
     reader = PdfReader(file)
